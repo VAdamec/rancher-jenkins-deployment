@@ -1,0 +1,54 @@
+version: '2'
+services:
+  wordpress:
+    build: wordpress/
+    image: myregistry.example.com:5000/team/sampleapp/wordpress:${VERSION}
+    tty: true
+    stdin_open: true
+    links:
+    - db:mysql
+    - wordpress-data:data
+    labels:
+      io.rancher.scheduler.affinity:host_label: host_type=common
+      loadbalancer.https: 'true'
+      registry.sampleapp.app: '1'
+      io.rancher.sidekicks: wordpress-data, filebeat
+    volumes_from:
+     - wordpress-data
+
+  wordpress-data:
+    build: wordpress-data/
+    image: myregistry.example.com:5000/team/sampleapp/wordpress-data:${VERSION}
+    tty: true
+    stdin_open: true
+    network_mode: none
+    environment:
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+    command:
+    - cat
+    labels:
+      io.rancher.scheduler.affinity:host_label: host_type=common
+      registry.sampleapp.data: '1'
+      io.rancher.container.start_once: 'true'
+
+  db:
+    image: mariadb
+    tty: true
+    stdin_open: true
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    labels:
+      io.rancher.scheduler.affinity:host_label: host_type=common
+      registry.sampleapp.db: '1'
+    volumes:
+    - ${PERSISTENT_VOLUME}mariadb:/var/lib/mysql
+
+  filebeat:
+    build: filebeat/
+    tty: true
+    stdin_open: true
+    image: myregistry.example.com:5000/team/sampleapp/filebeat:${VERSION}
+    labels:
+      io.rancher.scheduler.affinity:host_label: host_type=common
+    volumes_from:
+     - wordpress

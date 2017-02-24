@@ -1,0 +1,7 @@
+filebeat.modules:
+filebeat.prospectors:
+- input_type: log
+  paths:
+    - /var/log/httpd/*.log
+output.elasticsearch:
+  hosts: ["rancher-elastic.example.com:80"]
